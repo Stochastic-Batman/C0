@@ -41,7 +41,7 @@ C0/
 └── bin/  # Output dir for built executable (git ignore this)
 ```
 
-### **Context-Free Grammar of C0**
+## **Context-Free Grammar of C0**
 
 **Note**: Dereference changed from `*` to `@` to avoid ambiguity with multiplication in parsing.
 
