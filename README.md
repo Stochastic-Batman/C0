@@ -40,3 +40,48 @@ C0/
 ├── tests/  # Test files
 └── bin/  # Output dir for built executable (git ignore this)
 ```
+
+### **Context-Free Grammar of C0**
+
+**Note**: Dereference changed from `*` to `@` to avoid ambiguity with multiplication in parsing.
+
+| Non-terminal | Production                                                                                  | Description                          |
+|--------------|---------------------------------------------------------------------------------------------|--------------------------------------|
+| **Lexical**  |                                                                                             |                                      |
+| `<Di>`       | `0 \| 1 \| 2 \| 3 \| 4 \| 5 \| 6 \| 7 \| 8 \| 9`                                            | Digit                                |
+| `<DiS>`      | `<Di> \| <Di><DiS>`                                                                         | Digit sequence                       |
+| `<Le>`       | `a \| ... \| z \| A \| ... \| Z \| _`                                                       | Letter                               |
+| `<DiLe>`     | `<Le> \| <Di>`                                                                              | Alphanumeric symbol                  |
+| `<DiLeS>`    | `<DiLe> \| <DiLe><DiLeS>`                                                                   | Sequence of alphanumeric symbols     |
+| `<Na>`       | `<Le> \| <Le><DiLeS>`                                                                       | Name                                 |
+| `<C>`        | `<DiS> \| <DiS>u \| null`                                                                   | int/uint/null constant               |
+| `<CC>`       | `'_' \| ... \| '~'`                                                                         | Char-constant with ASCII code        |
+| `<BC>`       | `true \| false`                                                                             | Bool-constant                        |
+| `<id>`       | `<Na> \| <id>.<Na> \| <id>[<E>] \| <id>@ \| <id>&`                                          | Identifier (field, index, deref, addr) |
+| **Expressions** |                                                                                          |                                      |
+| `<F>`        | `<id> \| -<F> \| (<E>) \| <C>`                                                              | Factor                               |
+| `<T>`        | `<F> \| <T>*<F> \| <T>/<F>`                                                                 | Term                                 |
+| `<E>`        | `<T> \| <E>+<T> \| <E>-<T>`                                                                 | Expression                           |
+| `<Atom>`     | `<E> > <E> \| <E> >= <E> \| <E> < <E> \| <E> <= <E> \| <E> == <E> \| <E> != <E> \| <BC>`    | Atom                                 |
+| `<BF>`       | `<id> \| <Atom> \| !<BF> \| (<BE>)`                                                         | Boolean factor                       |
+| `<BT>`       | `<BF> \| <BT> && <BF>`                                                                      | Boolean term                         |
+| `<BE>`       | `<BT> \| <BE> \|\| <BT>`                                                                    | Boolean expression                   |
+| `<Pa>`       | `<E> \| <BE> \| <CC>`                                                                       | Parameter                            |
+| `<PaS>`      | `<Pa> \| <Pa>,<PaS>`                                                                        | Parameter sequence                   |
+| **Statements** |                                                                                           |                                      |
+| `<St>`       | `<id> = <E> \| <id> = <BE> \| <id> = <CC>`<br>`\| if <BE> { <StS> }`<br>`\| if <BE> { <StS> } else { <StS> }`<br>`\| while <BE> { <StS> }`<br>`\| <id> = <Na>(<PaS>) \| <id> = <Na>()`<br>`\| <id> = new <Na>@` | Assignment / if-then / if-then-else / while / call / alloc |
+| `<StS>`      | `<St> \| <St>; <StS>`                                                                       | Statement sequence                   |
+| `<rSt>`      | `return <E> \| return <BE> \| return <CC>`                                                  | Return statement                     |
+| **Types and Declarations** |                                                                             |                                      |
+| `<Ty>`       | `int \| bool \| char \| uint \| <Na>`                                                       | Basic type                           |
+| `<VaD>`      | `<Ty> <Na>`                                                                                 | Variable declaration                 |
+| `<VaDS>`     | `<VaD> \| <VaD>;<VaDS>`                                                                     | Variable declaration sequence        |
+| `<TE>`       | `<Ty>[<DiS>] \| <Ty>@ \| struct { <VaDS> }`                                                 | Type expression (array/pointer/struct) |
+| `<TyD>`      | `typedef <TE> <Na>`                                                                         | Type declaration                     |
+| `<TyDS>`     | `<TyD> \| <TyD>;<TyDS>`                                                                     | Type declaration sequence            |
+| **Functions and Program** |                                                                                |                                      |
+| `<body>`     | `<rSt> \|  <StS>;<rSt>`                                                                     | Function body                        |
+| `<PaDS>`     | `<VaD> \| <VaD>,<PaDS>`                                                                     | Parameter declarations               |
+| `<FuD>`      | `<Ty> <Na>(<PaDS>){<VaDS>;<body>} \| <Ty> <Na>(<PaDS>){<body>}`<br>`\| <Ty> <Na>(){<VaDS>;<body>} \| <Ty> <Na>(){<body>}` | Function declaration                 |
+| `<FuDS>`     | `<FuD> \| <FuD>;<FuDS>`                                                                     | Function sequence                    |
+| `<prog>`     | `<TyDS>;<VaDS>;<FuDS> \| <VaDS>;<FuDS> \| <TyDS>;<FuDS> \| <FuDS>`                          | Program                              |
