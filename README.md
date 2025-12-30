@@ -25,6 +25,7 @@ This project applies the techniques from Thain's book to implement a full compil
 C0/
 ├── README.md
 ├── Makefile  # Build rules
+├── LL1_check.py  # Check if the transformed C0 CFG is LL1 via First and Follow sets
 ├── src/  # All source code
 │   ├── main.c  # Entry point: reads input file, calls scanner/parser/etc., outputs assembly
 │   ├── scanner.c  # Scanner implementation
@@ -104,53 +105,79 @@ It is possible to transform the **C0** CFG into an ***LL(1)*** grammar by elimin
 | Non-terminal | Production | Description |
 |--------------|------------|-------------|
 | **Types** | | |
-| `<Ty>` | `int \| bool \| char \| uint \| <Na>` | Basic type |
-| `<TE'>` | `[ <DiS> ] \| @ \| ε` | **Added ε** |
-| `<VaD>` | `<Ty> <Na>` | Variable decl |
-| `<VaDS'>` | `; <VaD> <VaDS'> \| ε` | |
-| `<VaDS>` | `<VaD> <VaDS'>` | Var decl sequence |
-| `<TE>` | `<Ty> <TE'> \| struct { <VaDS> }` | **Factored struct out** |
-| **Declarations** | | |
-| `<TyD>` | `typedef <TE> <Na>` | Type decl |
-| `<TyDS'>` | `; <TyD> <TyDS'> \| ε` | |
-| `<TyDS>` | `<TyD> <TyDS'>` | Type decl sequence |
-| **Lexical** | | |
-| `<id>` | `<Na> <id'>` | Identifier with postfix |
-| `<id'>` | `. <Na> <id'> \| [ <Expr> ] <id'> \| @ <id'> \| & <id'> \| ( <PSO> ) <id'> \| ε` | **Added function call** |
+| `<Ty>` | `int \| bool \| char \| uint \| ID` | Basic type |
+| `<TEprime>` | `[ NUM ] \| @ \| ε` | Type modifier |
+| `<TE>` | `<Ty> <TEprime> \| struct { <VaDS> }` | Type expression |
+| **Variable Declarations** | | |
+| `<VaD>` | `<Ty> ID` | Variable declaration |
+| `<VaDS_tail>` | `; <VaD> <VaDS_tail> \| ε` | More var decls |
+| `<VaDS>` | `<VaD> <VaDS_tail>` | Var decl sequence |
+| **Type Declarations** | | |
+| `<TyD>` | `typedef <TE> ID` | Type declaration |
+| `<TyDS_tail>` | `; <TyD> <TyDS_tail> \| ε` | More type decls |
+| `<TyDS>` | `<TyD> <TyDS_tail>` | Type decl sequence |
+| `<TDSO>` | `<TyDS> \| ε` | Optional typedefs |
+| **L-values** | | |
+| `<lvalue>` | `ID <lvalue_tail>` | L-value |
+| `<lvalue_tail>` | `. ID <lvalue_tail> \| [ <Expr> ] <lvalue_tail> \| @ <lvalue_tail> \| & <lvalue_tail> \| ε` | L-value postfix |
 | **Expressions** | | |
-| `<Primary>` | `<id> \| - <Primary> \| ! <Primary> \| ( <Expr> ) \| <C> \| <CC> \| <BC>` | Base factors |
-| `<MulExpr>` | `<Primary> <MulExpr'>` | Multiplicative |
-| `<MulExpr'>` | `* <Primary> <MulExpr'> \| / <Primary> <MulExpr'> \| ε` | |
-| `<AddExpr>` | `<MulExpr> <AddExpr'>` | Additive |
-| `<AddExpr'>` | `+ <MulExpr> <AddExpr'> \| - <MulExpr> <AddExpr'> \| ε` | |
-| `<RelExpr>` | `<AddExpr> <RelExpr'>` | Relational |
-| `<RelExpr'>` | `<rel_op> <AddExpr> <RelExpr'> \| ε` | |
-| `<AndExpr>` | `<RelExpr> <AndExpr'>` | Logical AND |
-| `<AndExpr'>` | `&& <RelExpr> <AndExpr'> \| ε` | |
-| `<Expr>` | `<AndExpr> <Expr'>` | Full expression |
-| `<Expr'>` | `\|\| <AndExpr> <Expr'> \| ε` | OR |
-| **Parameters** | | |
-| `<PaS>` | `<Expr> <PaS'>` | Parameter sequence |
-| `<PaS'>` | `, <Expr> <PaS'> \| ε` | |
-| `<PSO>` | `<PaS> \| ε` | Optional params |
+| `<Primary>` | `ID <primary_tail> \| - <Primary> \| ! <Primary> \| ( <Expr> ) \| <C> \| <CC> \| <BC>` | Primary expression |
+| `<primary_tail>` | `( <PSO> ) \| <lvalue_tail>` | Call or postfix ops |
+| `<MulExpr>` | `<Primary> <MulExpr_tail>` | Multiplicative expr |
+| `<MulExpr_tail>` | `* <Primary> <MulExpr_tail> \| / <Primary> <MulExpr_tail> \| ε` | Mul/div continuation |
+| `<AddExpr>` | `<MulExpr> <AddExpr_tail>` | Additive expr |
+| `<AddExpr_tail>` | `+ <MulExpr> <AddExpr_tail> \| - <MulExpr> <AddExpr_tail> \| ε` | Add/sub continuation |
+| `<RelExpr>` | `<AddExpr> <RelExpr_tail>` | Relational expr |
+| `<RelExpr_tail>` | `<rel_op> <AddExpr> <RelExpr_tail> \| ε` | Relational continuation |
+| `<AndExpr>` | `<RelExpr> <AndExpr_tail>` | Logical AND expr |
+| `<AndExpr_tail>` | `&& <RelExpr> <AndExpr_tail> \| ε` | AND continuation |
+| `<Expr>` | `<AndExpr> <Expr_tail>` | Full expression |
+| `<Expr_tail>` | `\|\| <AndExpr> <Expr_tail> \| ε` | OR continuation |
+| **Call Parameters** | | |
+| `<PaS>` | `<Expr> <PaS_tail>` | Parameter sequence |
+| `<PaS_tail>` | `, <Expr> <PaS_tail> \| ε` | More parameters |
+| `<PSO>` | `<PaS> \| ε` | Optional parameters |
 | **Statements** | | |
-| `<RHS>` | `<Expr> \| new <Na> @` | **Simplified - calls now in `<id'>`** |
-| `<rSt>` | `return <Expr>` | |
-| `<EP>` | `else { <StS> } \| ε` | |
-| `<St>` | `<id> = <RHS> \| if <Expr> { <StS> } <EP> \| while <Expr> { <StS> }` | |
-| `<StS'>` | `; <St> <StS'> \| ε` | |
-| `<StS>` | `<St> <StS'>` | Statement sequence |
+| `<RHS>` | `<Expr> \| new ID @` | Assignment RHS |
+| `<rSt>` | `return <Expr>` | Return statement |
+| `<EP>` | `else { <StS> } \| ε` | Optional else |
+| `<St>` | `<lvalue> = <RHS> \| if <Expr> { <StS> } <EP> \| while <Expr> { <StS> }` | Statement |
+| `<StS_tail>` | `; <St> <StS_tail> \| ε` | More statements |
+| `<StS>` | `<St> <StS_tail>` | Statement sequence |
 | **Function Body** | | |
-| `<locals>` | `local <VaDS> ; \| ε` | **Added `local` keyword** |
-| `<SSO>` | `<StS> ; \| ε` | |
-| `<body>` | `<SSO> <rSt>` | |
-| **Functions** | | |
-| `<PaDS>` | `<VaD> <PaDS'>` | Param decls |
-| `<PaDS'>` | `, <VaD> <PaDS'> \| ε` | |
-| `<PDSO>` | `<PaDS> \| ε` | |
-| **Program (Factored)** | | |
-| `<GDT>` | `; \| ( <PDSO> ) { <locals> <body> }` | **Distinguishes var vs func** |
-| `<GD>` | `<Ty> <Na> <GDT>` | **Common prefix factored** |
-| `<GDs>` | `<GD> <GDs> \| ε` | **Unified var/func** |
-| `<TDSO>` | `<TyDS> ; \| ε` | Optional typedefs |
+| `<locals>` | `local <VaDS> \| ε` | Local declarations |
+| `<SSO>` | `<StS> \| ε` | Optional statements |
+| `<body>` | `<SSO> <rSt>` | Function body |
+| **Function Parameters** | | |
+| `<PaDS>` | `<VaD> <PaDS_tail>` | Param declarations |
+| `<PaDS_tail>` | `, <VaD> <PaDS_tail> \| ε` | More param decls |
+| `<PDSO>` | `<PaDS> \| ε` | Optional param decls |
+| **Program** | | |
+| `<GDT>` | `; \| ( <PDSO> ) { <locals> <body> }` | Var end or function def |
+| `<GD>` | `<Ty> ID <GDT>` | Global declaration |
+| `<GDs>` | `<GD> <GDs> \| ε` | Global decl sequence |
 | `<prog>` | `<TDSO> <GDs>` | Program |
+
+## Terminals
+
+| Terminal | Description |
+|----------|-------------|
+| `ID` | Identifier |
+| `NUM` | Integer literal (for array sizes) |
+| `<C>` | Integer constant |
+| `<CC>` | Character constant |
+| `<BC>` | Boolean constant (`true`, `false`) |
+| `<rel_op>` | Relational operator (`<`, `>`, `<=`, `>=`, `==`, `!=`) |
+| `int`, `bool`, `char`, `uint` | Built-in type keywords |
+| `struct`, `typedef`, `new` | Type-related keywords |
+| `if`, `else`, `while`, `return`, `local` | Control and declaration keywords |
+| `+`, `-`, `*`, `/` | Arithmetic operators |
+| `&&`, `\|\|`, `!` | Logical operators |
+| `@`, `&` | Pointer dereference and address-of |
+| `.` | Field access |
+| `[`, `]` | Array indexing |
+| `(`, `)` | Parentheses |
+| `{`, `}` | Braces |
+| `;` | Statement/declaration separator |
+| `,` | Parameter separator |
+| `=` | Assignment |
