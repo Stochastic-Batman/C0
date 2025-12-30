@@ -85,3 +85,19 @@ C0/
 | `<FuD>`      | `<Ty> <Na>(<PaDS>){<VaDS>;<body>} \| <Ty> <Na>(<PaDS>){<body>}`<br>`\| <Ty> <Na>(){<VaDS>;<body>} \| <Ty> <Na>(){<body>}` | Function declaration                 |
 | `<FuDS>`     | `<FuD> \| <FuD>;<FuDS>`                                                                     | Function sequence                    |
 | `<prog>`     | `<TyDS>;<VaDS>;<FuDS> \| <VaDS>;<FuDS> \| <TyDS>;<FuDS> \| <FuDS>`                          | Program                              |
+
+The C0 grammar is not LL(1) due to several issues that prevent predictive top-down parsing with one-token lookahead:
+
+1. Primarily, left recursion in non-terminals like `<id>` (e.g., when parsing `x.y`, the parser gets stuck in an infinite loop because it keeps trying the recursive production `<id>.<Na>` without advancing, unable to decide if `x` is the base or part of a chain). This is like an infinite descent in recursive functions without a base case.
+
+2. `FIRST` set conflicts from overlapping starting tokens in alternatives, such as in `<prog>` (e.g., `typedef int x;` overlaps on `typedef` for programs with or without variable sections). Think of `FIRST` sets like the possible first tokens of a production (similar to entry symbols in a DFA state) - when they overlap for different choices under the same non-terminal, the parser can't predict which path to take with just one lookahead token, leading to ambiguity.
+
+3. Further conflicts in recursive sequences like `<VaDS>` (e.g., `int x;` overlaps on `int` because the parser can't tell if it's a single declaration or the start of a list without more lookahead). These are similar to the expression issues but for lists, where the grammar uses left-recursive or unfactored productions that don't clearly separate a single item from a chain, forcing the parser to guess ahead.
+
+### Feasibility of Rewriting to ***LL(1)***
+It is possible to transform the **C0** CFG into an ***LL(1)*** grammar by eliminating left recursion, removing ambiguities (the original C0 is unambiguous, so no loss of language), and eliminating common prefixes). The resulting grammar **C0++** maintains the same language but is suitable for recursive descent parsing. 
+
+## **Context-Free Grammar of C0++**
+
+**Note**: Dereference remains `@`; lexical terminals as before (ID for <Na>, NUM for <DiS>, etc.). <Expr> now handles both arith and bool, with semantics to check types later.
+
