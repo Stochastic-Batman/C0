@@ -97,7 +97,58 @@ The C0 grammar is not LL(1) due to several issues that prevent predictive top-do
 ### Feasibility of Rewriting to ***LL(1)***
 It is possible to transform the **C0** CFG into an ***LL(1)*** grammar by eliminating left recursion, removing ambiguities (the original C0 is unambiguous, so no loss of language), and eliminating common prefixes). The resulting grammar **C0++** maintains the same language but is suitable for recursive descent parsing. 
 
-## **Context-Free Grammar of C0++**
-
+## LL(1) CFG of C0++
 **Note**: Dereference remains `@`; lexical terminals as before (ID for <Na>, NUM for <DiS>, etc.). <Expr> now handles both arith and bool, with semantics to check types later.
-
+| Non-terminal | Production | Description |
+|--------------|------------|-------------|
+| **Types** | | |
+| `<Ty>` | `int \| bool \| char \| uint \| <Na>` | Basic type |
+| `<TE'>` | `[ <DiS> ] \| @ \| ε` | **Added ε** |
+| `<VaD>` | `<Ty> <Na>` | Variable decl |
+| `<VaDS'>` | `; <VaD> <VaDS'> \| ε` | |
+| `<VaDS>` | `<VaD> <VaDS'>` | Var decl sequence |
+| `<TE>` | `<Ty> <TE'> \| struct { <VaDS> }` | **Factored struct out** |
+| **Declarations** | | |
+| `<TyD>` | `typedef <TE> <Na>` | Type decl |
+| `<TyDS'>` | `; <TyD> <TyDS'> \| ε` | |
+| `<TyDS>` | `<TyD> <TyDS'>` | Type decl sequence |
+| **Lexical** | | |
+| `<id>` | `<Na> <id'>` | Identifier with postfix |
+| `<id'>` | `. <Na> <id'> \| [ <Expr> ] <id'> \| @ <id'> \| & <id'> \| ( <PSO> ) <id'> \| ε` | **Added function call** |
+| **Expressions** | | |
+| `<Primary>` | `<id> \| - <Primary> \| ! <Primary> \| ( <Expr> ) \| <C> \| <CC> \| <BC>` | Base factors |
+| `<MulExpr>` | `<Primary> <MulExpr'>` | Multiplicative |
+| `<MulExpr'>` | `* <Primary> <MulExpr'> \| / <Primary> <MulExpr'> \| ε` | |
+| `<AddExpr>` | `<MulExpr> <AddExpr'>` | Additive |
+| `<AddExpr'>` | `+ <MulExpr> <AddExpr'> \| - <MulExpr> <AddExpr'> \| ε` | |
+| `<RelExpr>` | `<AddExpr> <RelExpr'>` | Relational |
+| `<RelExpr'>` | `<rel_op> <AddExpr> <RelExpr'> \| ε` | |
+| `<AndExpr>` | `<RelExpr> <AndExpr'>` | Logical AND |
+| `<AndExpr'>` | `&& <RelExpr> <AndExpr'> \| ε` | |
+| `<Expr>` | `<AndExpr> <Expr'>` | Full expression |
+| `<Expr'>` | `\|\| <AndExpr> <Expr'> \| ε` | OR |
+| **Parameters** | | |
+| `<PaS>` | `<Expr> <PaS'>` | Parameter sequence |
+| `<PaS'>` | `, <Expr> <PaS'> \| ε` | |
+| `<PSO>` | `<PaS> \| ε` | Optional params |
+| **Statements** | | |
+| `<RHS>` | `<Expr> \| new <Na> @` | **Simplified - calls now in `<id'>`** |
+| `<rSt>` | `return <Expr>` | |
+| `<EP>` | `else { <StS> } \| ε` | |
+| `<St>` | `<id> = <RHS> \| if <Expr> { <StS> } <EP> \| while <Expr> { <StS> }` | |
+| `<StS'>` | `; <St> <StS'> \| ε` | |
+| `<StS>` | `<St> <StS'>` | Statement sequence |
+| **Function Body** | | |
+| `<locals>` | `local <VaDS> ; \| ε` | **Added `local` keyword** |
+| `<SSO>` | `<StS> ; \| ε` | |
+| `<body>` | `<SSO> <rSt>` | |
+| **Functions** | | |
+| `<PaDS>` | `<VaD> <PaDS'>` | Param decls |
+| `<PaDS'>` | `, <VaD> <PaDS'> \| ε` | |
+| `<PDSO>` | `<PaDS> \| ε` | |
+| **Program (Factored)** | | |
+| `<GDT>` | `; \| ( <PDSO> ) { <locals> <body> }` | **Distinguishes var vs func** |
+| `<GD>` | `<Ty> <Na> <GDT>` | **Common prefix factored** |
+| `<GDs>` | `<GD> <GDs> \| ε` | **Unified var/func** |
+| `<TDSO>` | `<TyDS> ; \| ε` | Optional typedefs |
+| `<prog>` | `<TDSO> <GDs>` | Program |
