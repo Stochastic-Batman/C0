@@ -97,8 +97,10 @@ The C0 grammar is not LL(1) due to several issues that prevent predictive top-do
 ### Feasibility of Rewriting to ***LL(1)***
 It is possible to transform the **C0** CFG into an ***LL(1)*** grammar by eliminating left recursion, removing ambiguities (the original C0 is unambiguous, so no loss of language), and eliminating common prefixes). The resulting grammar **C0++** maintains the same language but is suitable for recursive descent parsing. 
 
-## LL(1) CFG of C0++
+## ***LL(1)*** CFG of **C0**
+
 **Note**: Dereference remains `@`; lexical terminals as before (ID for <Na>, NUM for <DiS>, etc.). <Expr> now handles both arith and bool, with semantics to check types later.
+
 | Non-terminal | Production | Description |
 |--------------|------------|-------------|
 | **Types** | | |
