@@ -57,9 +57,7 @@ static void eat(token_type expected) {
     if (current->type == expected) {
         advance();
     } else {
-        fprintf(stderr, "Error at line %d col %d: expected %d, got %d (%s)\n",
-                current->line, current->col, expected, current->type,
-                current->lexeme ? current->lexeme : "EOF");
+        fprintf(stderr, "Error at line %d col %d: expected %d, got %d (%s)\n", current->line, current->col, expected, current->type, current->lexeme ? current->lexeme : "EOF");
         exit(1);
     }
 }
@@ -189,8 +187,7 @@ static ast_t* parse_va_d(void) {
 
 static ast_t* parse_va_ds(void) {
     ast_t* seq = new_ast(AST_VAR_DECL_SEQ);
-    while (current->type == TOKEN_INT || current->type == TOKEN_BOOL || current->type == TOKEN_CHAR_KW ||
-           current->type == TOKEN_UINT || current->type == TOKEN_IDENTIFIER) {
+    while (current->type == TOKEN_INT || current->type == TOKEN_BOOL || current->type == TOKEN_CHAR_KW || current->type == TOKEN_UINT || current->type == TOKEN_IDENTIFIER) {
         ast_t* decl = parse_va_d();
         add_child(seq, decl);
         eat(TOKEN_SEMI);
@@ -407,8 +404,7 @@ static binop_t parse_rel_op(void) {
 
 
 static ast_t* parse_rel_expr_tail(ast_t* left) {
-    while (current->type == TOKEN_EQ || current->type == TOKEN_NEQ || current->type == TOKEN_LT ||
-           current->type == TOKEN_GT || current->type == TOKEN_LEQ || current->type == TOKEN_GEQ) {
+    while (current->type == TOKEN_EQ || current->type == TOKEN_NEQ || current->type == TOKEN_LT || current->type == TOKEN_GT || current->type == TOKEN_LEQ || current->type == TOKEN_GEQ) {
         binop_t op = parse_rel_op();
         advance();
         ast_t* right = parse_add_expr();
@@ -469,7 +465,7 @@ static ast_t* parse_expr(void) {
 
 
 static ast_t* parse_pa_s(void) {
-    ast_t* seq = new_ast(AST_PARAM_DECL_SEQ);  // Reuse for expr list
+    ast_t* seq = new_ast(AST_PARAM_DECL_SEQ);
     ast_t* expr = parse_expr();
     add_child(seq, expr);
     while (current->type == TOKEN_COMMA) {
@@ -584,16 +580,13 @@ static ast_t* parse_sso(void) {
 
 
 static ast_t* parse_locals(void) {
-    if (current->type == TOKEN_INT || current->type == TOKEN_BOOL || current->type == TOKEN_CHAR_KW ||
-        current->type == TOKEN_UINT || current->type == TOKEN_IDENTIFIER) {
-        return parse_va_ds();
-    }
+    if (current->type == TOKEN_INT || current->type == TOKEN_BOOL || current->type == TOKEN_CHAR_KW || current->type == TOKEN_UINT || current->type == TOKEN_IDENTIFIER) return parse_va_ds();
     return new_ast(AST_VAR_DECL_SEQ);
 }
 
 
 static ast_t* parse_body(void) {
-    ast_t* node = new_ast(AST_STMT_SEQ);  // Body as seq
+    ast_t* node = new_ast(AST_STMT_SEQ);
     ast_t* stmts = parse_sso();
     add_children(node, stmts->children, stmts->child_count);
     free(stmts);
@@ -665,7 +658,7 @@ static ast_t* parse_gd(void) {
 
 
 static ast_t* parse_g_ds(void) {
-    ast_t* seq = new_ast(AST_VAR_DECL_SEQ);  // Reuse for globals
+    ast_t* seq = new_ast(AST_VAR_DECL_SEQ);
     while (current->type != TOKEN_EOF) {
         ast_t* gd = parse_gd();
         add_child(seq, gd);
