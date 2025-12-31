@@ -19,8 +19,11 @@ $(BIN_DIR)/%.o: $(SRC_DIR)/%.c | $(BIN_DIR)
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-test_scanner: $(BIN_DIR)/main.o $(BIN_DIR)/scanner.o | $(BIN_DIR)
+test_scanner: $(BIN_DIR)/main.o $(BIN_DIR)/scanner.o $(BIN_DIR)/parser.o | $(BIN_DIR)
 	$(CC) $^ -o $(BIN_DIR)/test_scanner
+
+test_parser: $(BIN_DIR)/main.o $(BIN_DIR)/scanner.o $(BIN_DIR)/parser.o | $(BIN_DIR)
+	$(CC) $^ -o $(BIN_DIR)/test_parser
 
 clean:
 	rm -rf $(BIN_DIR)

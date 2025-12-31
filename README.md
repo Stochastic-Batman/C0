@@ -42,6 +42,40 @@ C0/
 └── bin/  # Output dir for built executable (git ignore this)
 ```
 
+
+## **Running the Tests**
+
+Test files are located in the `tests/` directory. Use the following commands to build and run the test suites.
+
+### 1. Build the Test Executables
+
+```bash
+make test_scanner
+make test_parser
+
+```
+
+
+### 2. Scanner Tests
+
+Tokenize input files using the `--scan` flag to print token details (type, lexeme, line, column, and value).
+
+* **Simple Function:** `./bin/test_scanner --scan tests/main_42.c0`
+* **Booleans & Numbers:** `./bin/test_scanner --scan tests/scanner_bool_num.c0`
+* **Expressions:** `./bin/test_scanner --scan tests/scanner_expr.c0`
+* **Error Handling:** `./bin/test_scanner --scan tests/scanner_error.c0`
+
+
+### 3. Parser Tests
+
+Run without the `--scan` flag to parse the input and print the **Abstract Syntax Tree (AST)** or syntax errors.
+
+* **Simple Return:** `./bin/test_parser tests/main_42.c0`
+* **Complex Expression:** `./bin/test_parser tests/parser_expr.c0`
+* **Syntax Error:** `./bin/test_parser tests/parser_error.c0`
+
+
+
 ## **Context-Free Grammar of C0**
 
 **Note**: Dereference changed from `*` to `@` to avoid ambiguity with multiplication in parsing.
