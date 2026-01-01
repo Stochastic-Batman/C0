@@ -1,0 +1,489 @@
+\documentclass{article}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{amsmath}
+\usepackage{array}
+
+\title{Derivation of LL(1) Grammar for C0}
+\author{Stochastic Batman}
+\date{January 1st, 2026}
+
+\begin{document}
+	
+	\maketitle
+	
+	\section{Original Context-Free Grammar of C0}
+	
+	The original grammar is presented below, with dereference operator changed from \texttt{*} to \texttt{@}.
+	
+	\subsection{Lexical Rules}
+	
+	\begin{longtable}{>{\ttfamily}l p{7cm} l}
+		\toprule
+		\normalfont Non-terminal & Production & Description \\
+		\midrule
+		<Di> & \texttt{0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9} & Digit \\[0.5em]
+		
+		<DiS> & \texttt{<Di> | <Di><DiS>} & Digit sequence \\[0.5em]
+		
+		<Le> & \texttt{a | ... | z | A | ... | Z | \_} & Letter \\[0.5em]
+		
+		<DiLe> & \texttt{<Le> | <Di>} & Alphanumeric symbol \\[0.5em]
+		
+		<DiLeS> & \texttt{<DiLe> | <DiLe><DiLeS>} & Sequence of alphanumeric symbols \\[0.5em]
+		
+		<Na> & \texttt{<Le> | <Le><DiLeS>} & Name \\[0.5em]
+		
+		<C> & \texttt{<DiS> | <DiS>u | null} & int/uint/null constant \\[0.5em]
+		
+		<CC> & \texttt{'\_' | ... | '\~{}'} & Char-constant with ASCII code \\[0.5em]
+		
+		<BC> & \texttt{true | false} & Bool-constant \\[0.5em]
+		
+		<id> & \texttt{<Na> | <id>.<Na> | <id>[<E>] | <id>@ | <id>\&} & 
+		Identifier (field, index, deref, addr) \\
+		\bottomrule
+	\end{longtable}
+	
+	\subsection{Expressions}
+	
+	\begin{longtable}{>{\ttfamily}l p{7cm} l}
+		\toprule
+		\normalfont Non-terminal & Production & Description \\
+		\midrule
+		<F> & \texttt{<id> | -<F> | (<E>) | <C>} & Factor \\[0.5em]
+		
+		<T> & \texttt{<F> | <T>*<F> | <T>/<F>} & Term \\[0.5em]
+		
+		<E> & \texttt{<T> | <E>+<T> | <E>-<T>} & Expression \\[0.5em]
+		
+		<Atom> & \texttt{<E> > <E> | <E> >= <E> | <E> < <E> | <E> <= <E> | <E> == <E> | <E> != <E> | <BC>} & Atom \\[0.5em]
+		
+		<BF> & \texttt{<id> | <Atom> | !<BF> | (<BE>)} & Boolean factor \\[0.5em]
+		
+		<BT> & \texttt{<BF> | <BT> \&\& <BF>} & Boolean term \\[0.5em]
+		
+		<BE> & \texttt{<BT> | <BE> || <BT>} & Boolean expression \\[0.5em]
+		
+		<Pa> & \texttt{<E> | <BE> | <CC>} & Parameter \\[0.5em]
+		
+		<PaS> & \texttt{<Pa> | <Pa>,<PaS>} & Parameter sequence \\
+		\bottomrule
+	\end{longtable}
+	
+	\subsection{Statements}
+	
+	\begin{longtable}{>{\ttfamily}l p{7cm} l}
+		\toprule
+		\normalfont Non-terminal & Production & Description \\
+		\midrule
+		<St> & \texttt{<id> = <E> | <id> = <BE> | <id> = <CC> | if <BE> \{ <StS> \} | if <BE> \{ <StS> \} else \{ <StS> \} | while <BE> \{ <StS> \} | <id> = <Na>(<PaS>) | <id> = <Na>() | <id> = new <Na>@} & 
+		Assignment / if-then / if-then-else / while / call / alloc \\[0.5em]
+		
+		<StS> & \texttt{<St> | <St>; <StS>} & Statement sequence \\[0.5em]
+		
+		<rSt> & \texttt{return <E> | return <BE> | return <CC>} & Return statement \\
+		\bottomrule
+	\end{longtable}
+	
+	\subsection{Types and Declarations}
+	
+	\begin{longtable}{>{\ttfamily}l p{7cm} l}
+		\toprule
+		\normalfont Non-terminal & Production & Description \\
+		\midrule
+		<Ty> & \texttt{int | bool | char | uint | <Na>} & Basic type \\[0.5em]
+		
+		<VaD> & \texttt{<Ty> <Na>} & Variable declaration \\[0.5em]
+		
+		<VaDS> & \texttt{<VaD> | <VaD>;<VaDS>} & Variable declaration sequence \\[0.5em]
+		
+		<TE> & \texttt{<Ty>[<DiS>] | <Ty>@ | struct \{ <VaDS> \}} & 
+		Type expression (array/pointer/struct) \\[0.5em]
+		
+		<TyD> & \texttt{typedef <TE> <Na>} & Type declaration \\[0.5em]
+		
+		<TyDS> & \texttt{<TyD> | <TyD>;<TyDS>} & Type declaration sequence \\
+		\bottomrule
+	\end{longtable}
+	
+	\subsection{Functions and Program}
+	
+	\begin{longtable}{>{\ttfamily}l p{7cm} l}
+		\toprule
+		\normalfont Non-terminal & Production & Description \\
+		\midrule
+		<body> & \texttt{<rSt> | <StS>;<rSt>} & Function body \\[0.5em]
+		
+		<PaDS> & \texttt{<VaD> | <VaD>,<PaDS>} & Parameter declarations \\[0.5em]
+		
+		<FuD> & \texttt{<Ty> <Na>(<PaDS>)\{<VaDS>;<body>\} | <Ty> <Na>(<PaDS>)\{<body>\} | <Ty> <Na>()\{<VaDS>;<body>\} | <Ty> <Na>()\{<body>\}} & 
+		Function declaration \\[0.5em]
+		
+		<FuDS> & \texttt{<FuD> | <FuD>;<FuDS>} & Function sequence \\[0.5em]
+		
+		<prog> & \texttt{<TyDS>;<VaDS>;<FuDS> | <VaDS>;<FuDS> | <TyDS>;<FuDS> | <FuDS>} & Program \\
+		\bottomrule
+	\end{longtable}
+	
+	\section{Deriving the LL(1) Grammar}
+	
+	To transform the original grammar into an LL(1) grammar, I address issues such as left recursion, common prefixes in alternatives, and ambiguity. I proceed section by section, deriving each non-terminal in the LL(1) version from the original rules. I introduce new non-terminals for tails to handle recursion and factoring.
+	
+	\subsection{Lexical Rules and Terminals}
+	
+	The lexical rules are mostly regular expressions and not recursive, so they are largely unchanged. In the LL(1) version, I use terminals like \texttt{ID} for \texttt{<Na>}, \texttt{NUM} for \texttt{<DiS>}, etc.
+	
+	I refactor the identifier \texttt{<id>} into l-value with postfix operators.
+	
+	\textbf{Original} \texttt{<id>}: \texttt{<Na> | <id>.<Na> | <id>[<E>] | <id>@ | <id>\&}.
+	
+	This has left recursion. To eliminate it, I introduce \texttt{<lvalue>} and \texttt{<lvalue\_tail>}.
+	
+	\textbf{Derive} \texttt{<lvalue>}:
+	
+	I start with base: \texttt{<lvalue> -> ID <lvalue\_tail>}, where \texttt{ID} replaces \texttt{<Na>}.
+	
+	Now, the recursive parts: \texttt{. ID}, \texttt{[ <Expr> ]}, \texttt{@}, \texttt{\&}, and \texttt{$\epsilon$} for no more.
+	
+	So, \texttt{<lvalue\_tail> -> . ID <lvalue\_tail> | [ <Expr> ] <lvalue\_tail> | @ <lvalue\_tail> | \& <lvalue\_tail> | $\epsilon$}.
+	
+	This is left-factored already since each alternative starts with a distinct terminal: \texttt{.}, \texttt{[}, \texttt{@}, \texttt{\&}, or \texttt{$\epsilon$}. No left recursion because tail is after the operator. This matches the LL(1) version.
+	
+	For constants, \texttt{<C>}, \texttt{<CC>}, \texttt{<BC>} become terminals.
+	
+	\subsection{Types and Declarations}
+	
+	I start with types.
+	
+	\textbf{Original} \texttt{<Ty>}: \texttt{int | bool | char | uint | <Na>}.
+	
+	I replace \texttt{<Na>} with \texttt{ID}, so \texttt{<Ty> -> int | bool | char | uint | ID}. Unchanged.
+	
+	\textbf{Original} \texttt{<TE>}: \texttt{<Ty>[<DiS>] | <Ty>@ | struct \{ <VaDS> \}}.
+	
+	I replace \texttt{<DiS>} with \texttt{NUM}. This has common prefix \texttt{<Ty>} in first two alternatives.
+	
+	\textbf{Left-factor}: I introduce \texttt{<TEprime>} for the modifier.
+	
+	\texttt{<TE> -> <Ty> <TEprime> | struct \{ <VaDS> \}}.
+	
+	\texttt{<TEprime> -> [ NUM ] | @ | $\epsilon$}.
+	
+	Now distinct starts: \texttt{int}/\texttt{bool}/\texttt{char}/\texttt{uint}/\texttt{ID} vs \texttt{struct}. Within \texttt{<TEprime>}, starts with \texttt{[}, \texttt{@}, or \texttt{$\epsilon$}. Matches LL(1).
+	
+	\textbf{Variable declarations}:
+	
+	\textbf{Original} \texttt{<VaD>}: \texttt{<Ty> <Na> -> <Ty> ID}. Unchanged.
+	
+	\textbf{Original} \texttt{<VaDS>}: \texttt{<VaD> | <VaD>; <VaDS>}. Left recursive.
+	
+	\textbf{Eliminate}: \texttt{<VaDS> -> <VaD> <VaDS\_tail>}.
+	
+	\texttt{<VaDS\_tail> -> ; <VaD> <VaDS\_tail> | $\epsilon$}.
+	
+	Starts with \texttt{;} or \texttt{$\epsilon$}. Matches LL(1).
+	
+	\textbf{Type declarations} follow similarly:
+	
+	\texttt{<TyDS> -> <TyD> <TyDS\_tail>}.
+	
+	\texttt{<TyDS\_tail> -> ; <TyD> <TyDS\_tail> | $\epsilon$}.
+	
+	Optional typedefs: \texttt{<TDSO> -> <TyDS> | $\epsilon$}.
+	
+	\subsection{Expressions}
+	
+	The expressions are separated into arithmetic and boolean in the original grammar, but in LL(1), I combine them into \texttt{<Expr>} with precedence levels.
+	
+	\textbf{Multiplicative expressions}:
+	
+	\textbf{Original} \texttt{<T> -> <F> | <T>*<F> | <T>/<F>}. This is left recursive.
+	
+	\textbf{I remove it}: \texttt{<MulExpr> -> <Primary> <MulExpr\_tail>}.
+	
+	\texttt{<MulExpr\_tail> -> * <Primary> <MulExpr\_tail> | / <Primary> <MulExpr\_tail> | $\epsilon$}.
+	
+	\textbf{Additive expressions}:
+	
+	\textbf{Original} \texttt{<E> -> <T> | <E>+<T> | <E>-<T>}.
+	
+	I transform it to: \texttt{<AddExpr> -> <MulExpr> <AddExpr\_tail>}.
+	
+	\texttt{<AddExpr\_tail> -> + <MulExpr> <AddExpr\_tail> | - <MulExpr> <AddExpr\_tail> | $\epsilon$}.
+	
+	\textbf{Relational expressions}:
+	
+	I create: \texttt{<RelExpr> -> <AddExpr> <RelExpr\_tail>}.
+	
+	\texttt{<RelExpr\_tail> -> <rel\_op> <AddExpr> <RelExpr\_tail> | $\epsilon$}.
+	
+	\textbf{Boolean expressions}:
+	
+	I build the AND level: \texttt{<AndExpr> -> <RelExpr> <AndExpr\_tail>}.
+	
+	\texttt{<AndExpr\_tail> -> \&\& <RelExpr> <AndExpr\_tail> | $\epsilon$}.
+	
+	And the OR level: \texttt{<Expr> -> <AndExpr> <Expr\_tail>}.
+	
+	\texttt{<Expr\_tail> -> || <AndExpr> <Expr\_tail> | $\epsilon$}.
+	
+	\subsection{Statements}
+	
+	\textbf{Original} \texttt{<St>} has many alternatives. I unify them into:
+	
+	\texttt{<lvalue> = <RHS> | if <Expr> \{ <StS> \} <EP> | while <Expr> \{ <StS> \}}.
+	
+	Where I define \texttt{<RHS> -> <Expr> | new ID @}.
+	
+	For if-then-else, I left factor by introducing:
+	
+	\texttt{<EP> -> else \{ <StS> \} | $\epsilon$}.
+	
+	\textbf{Statement sequences}:
+	
+	\textbf{Original} \texttt{<StS>}: \texttt{<St> | <St> ; <StS>}. Left recursive.
+	
+	\textbf{I remove it}: \texttt{<StS> -> <St> <StS\_tail>}.
+	
+	\texttt{<StS\_tail> -> ; <St> <StS\_tail> | $\epsilon$}.
+	
+	For return: I use \texttt{return <Expr>}, since I've unified the expression types.
+	
+	\subsection{Function Body}
+	
+	\textbf{Original body}: \texttt{<rSt> | <StS> ; <rSt>}.
+	
+	In LL(1), I define: \texttt{<body> -> <SSO> <rSt>}.
+	
+	\texttt{<SSO> -> <StS> | $\epsilon$}.
+	
+	For locals, I introduce the \texttt{local} keyword to distinguish local variable declarations:
+	
+	\texttt{<locals> -> local <VaDS> | $\epsilon$}.
+	
+	\subsection{Function Parameters}
+	
+	\textbf{Original} \texttt{<PaDS> -> <VaD> | <VaD>, <PaDS>}. Left recursive.
+	
+	\textbf{I remove it}: \texttt{<PaDS> -> <VaD> <PaDS\_tail>}.
+	
+	\texttt{<PaDS\_tail> -> , <VaD> <PaDS\_tail> | $\epsilon$}.
+	
+	I define \texttt{<PDSO> -> <PaDS> | $\epsilon$} for empty \texttt{()}.
+	
+	\subsection{Program and Globals}
+	
+	In LL(1), I unify the program structure as optional \texttt{<TDSO>} followed by \texttt{<GDs>}.
+	
+	I define: \texttt{<GD> -> <Ty> ID <GDT>}.
+	
+	\texttt{<GDT> -> ; | ( <PDSO> ) \{ <locals> <body> \}}.
+	
+	This distinguishes global variables (\texttt{<Ty> ID ;}) from functions (\texttt{<Ty> ID ( ... ) \{ ... \}}).
+	
+	I define: \texttt{<GDs> -> <GD> <GDs> | $\epsilon$}.
+	
+	\texttt{<prog> -> <TDSO> <GDs>}.
+	
+	\section{Derived LL(1) Grammar of C0}
+	
+	The derived LL(1) grammar is as follows.
+	
+	\subsection{Types}
+	
+	\begin{longtable}{>{\ttfamily}l p{7cm} l}
+		\toprule
+		\normalfont Non-terminal & Production & Description \\
+		\midrule
+		<Ty> & \texttt{int | bool | char | uint | ID} & Basic type \\[0.5em]
+		
+		<TEprime> & \texttt{[ NUM ] | @ | $\epsilon$} & Type modifier \\[0.5em]
+		
+		<TE> & \texttt{<Ty> <TEprime> | struct \{ <VaDS> \}} & Type expression \\
+		\bottomrule
+	\end{longtable}
+	
+	\subsection{Variable Declarations}
+	
+	\begin{longtable}{>{\ttfamily}l p{7cm} l}
+		\toprule
+		\normalfont Non-terminal & Production & Description \\
+		\midrule
+		<VaD> & \texttt{<Ty> ID} & Variable declaration \\[0.5em]
+		
+		<VaDS\_tail> & \texttt{; <VaD> <VaDS\_tail> | $\epsilon$} & More var decls \\[0.5em]
+		
+		<VaDS> & \texttt{<VaD> <VaDS\_tail>} & Var decl sequence \\
+		\bottomrule
+	\end{longtable}
+	
+	\subsection{Type Declarations}
+	
+	\begin{longtable}{>{\ttfamily}l p{7cm} l}
+		\toprule
+		\normalfont Non-terminal & Production & Description \\
+		\midrule
+		<TyD> & \texttt{typedef <TE> ID} & Type declaration \\[0.5em]
+		
+		<TyDS\_tail> & \texttt{; <TyD> <TyDS\_tail> | $\epsilon$} & More type decls \\[0.5em]
+		
+		<TyDS> & \texttt{<TyD> <TyDS\_tail>} & Type decl sequence \\[0.5em]
+		
+		<TDSO> & \texttt{<TyDS> | $\epsilon$} & Optional typedefs \\
+		\bottomrule
+	\end{longtable}
+	
+	\subsection{L-values}
+	
+	\begin{longtable}{>{\ttfamily}l p{7cm} l}
+		\toprule
+		\normalfont Non-terminal & Production & Description \\
+		\midrule
+		<lvalue> & \texttt{ID <lvalue\_tail>} & L-value \\[0.5em]
+		
+		<lvalue\_tail> & \texttt{. ID <lvalue\_tail> | [ <Expr> ] <lvalue\_tail> | @ <lvalue\_tail> | \& <lvalue\_tail> | $\epsilon$} & L-value postfix \\
+		\bottomrule
+	\end{longtable}
+	
+	\subsection{Expressions}
+	
+	\begin{longtable}{>{\ttfamily}l p{7cm} l}
+		\toprule
+		\normalfont Non-terminal & Production & Description \\
+		\midrule
+		<Primary> & \texttt{ID <primary\_tail> | - <Primary> | ! <Primary> | ( <Expr> ) | <C> | <CC> | <BC>} & Primary expression \\[0.5em]
+		
+		<primary\_tail> & \texttt{( <PSO> ) | <lvalue\_tail>} & Call or postfix ops \\[0.5em]
+		
+		<MulExpr> & \texttt{<Primary> <MulExpr\_tail>} & Multiplicative expr \\[0.5em]
+		
+		<MulExpr\_tail> & \texttt{* <Primary> <MulExpr\_tail> | / <Primary> <MulExpr\_tail> | $\epsilon$} & Mul/div continuation \\[0.5em]
+		
+		<AddExpr> & \texttt{<MulExpr> <AddExpr\_tail>} & Additive expr \\[0.5em]
+		
+		<AddExpr\_tail> & \texttt{+ <MulExpr> <AddExpr\_tail> | - <MulExpr> <AddExpr\_tail> | $\epsilon$} & Add/sub continuation \\[0.5em]
+		
+		<RelExpr> & \texttt{<AddExpr> <RelExpr\_tail>} & Relational expr \\[0.5em]
+		
+		<RelExpr\_tail> & \texttt{<rel\_op> <AddExpr> <RelExpr\_tail> | $\epsilon$} & Relational continuation \\[0.5em]
+		
+		<AndExpr> & \texttt{<RelExpr> <AndExpr\_tail>} & Logical AND expr \\[0.5em]
+		
+		<AndExpr\_tail> & \texttt{\&\& <RelExpr> <AndExpr\_tail> | $\epsilon$} & AND continuation \\[0.5em]
+		
+		<Expr> & \texttt{<AndExpr> <Expr\_tail>} & Full expression \\[0.5em]
+		
+		<Expr\_tail> & \texttt{|| <AndExpr> <Expr\_tail> | $\epsilon$} & OR continuation \\
+		\bottomrule
+	\end{longtable}
+	
+	\subsection{Call Parameters}
+	
+	\begin{longtable}{>{\ttfamily}l p{7cm} l}
+		\toprule
+		\normalfont Non-terminal & Production & Description \\
+		\midrule
+		<PaS> & \texttt{<Expr> <PaS\_tail>} & Parameter sequence \\[0.5em]
+		
+		<PaS\_tail> & \texttt{, <Expr> <PaS\_tail> | $\epsilon$} & More parameters \\[0.5em]
+		
+		<PSO> & \texttt{<PaS> | $\epsilon$} & Optional parameters \\
+		\bottomrule
+	\end{longtable}
+	
+	\subsection{Statements}
+	
+	\begin{longtable}{>{\ttfamily}l p{7cm} l}
+		\toprule
+		\normalfont Non-terminal & Production & Description \\
+		\midrule
+		<RHS> & \texttt{<Expr> | new ID @} & Assignment RHS \\[0.5em]
+		
+		<rSt> & \texttt{return <Expr>} & Return statement \\[0.5em]
+		
+		<EP> & \texttt{else \{ <StS> \} | $\epsilon$} & Optional else \\[0.5em]
+		
+		<St> & \texttt{<lvalue> = <RHS> | if <Expr> \{ <StS> \} <EP> | while <Expr> \{ <StS> \}} & Statement \\[0.5em]
+		
+		<StS\_tail> & \texttt{; <St> <StS\_tail> | $\epsilon$} & More statements \\[0.5em]
+		
+		<StS> & \texttt{<St> <StS\_tail>} & Statement sequence \\
+		\bottomrule
+	\end{longtable}
+	
+	\subsection{Function Body}
+	
+	\begin{longtable}{>{\ttfamily}l p{7cm} l}
+		\toprule
+		\normalfont Non-terminal & Production & Description \\
+		\midrule
+		<locals> & \texttt{local <VaDS> | $\epsilon$} & Local declarations \\[0.5em]
+		
+		<SSO> & \texttt{<StS> | $\epsilon$} & Optional statements \\[0.5em]
+		
+		<body> & \texttt{<SSO> <rSt>} & Function body \\
+		\bottomrule
+	\end{longtable}
+	
+	\subsection{Function Parameters}
+	
+	\begin{longtable}{>{\ttfamily}l p{7cm} l}
+		\toprule
+		\normalfont Non-terminal & Production & Description \\
+		\midrule
+		<PaDS> & \texttt{<VaD> <PaDS\_tail>} & Param declarations \\[0.5em]
+		
+		<PaDS\_tail> & \texttt{, <VaD> <PaDS\_tail> | $\epsilon$} & More param decls \\[0.5em]
+		
+		<PDSO> & \texttt{<PaDS> | $\epsilon$} & Optional param decls \\
+		\bottomrule
+	\end{longtable}
+	
+	\subsection{Program}
+	
+	\begin{longtable}{>{\ttfamily}l p{7cm} l}
+		\toprule
+		\normalfont Non-terminal & Production & Description \\
+		\midrule
+		<GDT> & \texttt{; | ( <PDSO> ) \{ <locals> <body> \}} & Var end or function def \\[0.5em]
+		
+		<GD> & \texttt{<Ty> ID <GDT>} & Global declaration \\[0.5em]
+		
+		<GDs> & \texttt{<GD> <GDs> | $\epsilon$} & Global decl sequence \\[0.5em]
+		
+		<prog> & \texttt{<TDSO> <GDs>} & Program \\
+		\bottomrule
+	\end{longtable}
+	
+	\section{Terminals}
+	
+	\begin{longtable}{>{\ttfamily}l p{9cm}}
+		\toprule
+		\normalfont Terminal & Description \\
+		\midrule
+		ID & Identifier \\[0.3em]
+		NUM & Integer literal (for array sizes) \\[0.3em]
+		<C> & Integer constant \\[0.3em]
+		<CC> & Character constant \\[0.3em]
+		<BC> & Boolean constant (\texttt{true}, \texttt{false}) \\[0.3em]
+		<rel\_op> & Relational operator (\texttt{<}, \texttt{>}, \texttt{<=}, \texttt{>=}, \texttt{==}, \texttt{!=}) \\[0.3em]
+		int, bool, char, uint & Built-in type keywords \\[0.3em]
+		struct, typedef, new & Type-related keywords \\[0.3em]
+		if, else, while, return, local & Control and declaration keywords \\[0.3em]
+		+, -, *, / & Arithmetic operators \\[0.3em]
+		\&\&, ||, ! & Logical operators \\[0.3em]
+		@, \& & Pointer dereference and address-of \\[0.3em]
+		. & Field access \\[0.3em]
+		[, ] & Array indexing \\[0.3em]
+		(, ) & Parentheses \\[0.3em]
+		\{, \} & Braces \\[0.3em]
+		; & Statement/declaration separator \\[0.3em]
+		, & Parameter separator \\[0.3em]
+		= & Assignment \\
+		\bottomrule
+	\end{longtable}
+	
+\end{document}

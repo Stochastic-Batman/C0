@@ -23,23 +23,19 @@ This project applies the techniques from Thain's book to implement a full compil
 
 ```text
 C0/
+├── LL1_check.py  # Check if the transformed C0 CFG is LL1 via First and Follow sets
+├── LL1_derivation.pdf  # Derivation of LL(1) C0
+├── LL1_derivation.tex  # Source code for the derivation of LL(1) C0
 ├── README.md
 ├── Makefile  # Build rules
-├── LL1_check.py  # Check if the transformed C0 CFG is LL1 via First and Follow sets
-├── src/  # All source code
-│   ├── main.c  # Entry point: reads input file, calls scanner/parser/etc., outputs assembly
+├── bin/  # Output dir for built executable (git ignored)
+├── src/
+│   ├── main.c  # Entry point: reads input file, calls scanner/parser/etc.
 │   ├── scanner.c  # Scanner implementation
 │   ├── scanner.h  # Scanner Header: token types enum, tokenize function prototype
 │   ├── parser.c  # Parser implementation
-│   ├── parser.h  # AST structs, parse function
-│   ├── types.c  # Type checking
-│   ├── types.h
-│   ├── codegen.c  # Code generation to MIPS assembly
-│   ├── codegen.h
-│   └── utils.c  # Helper functions (e.g., error reporting, string handling)
-│   └── utils.h
-├── tests/  # Test files
-└── bin/  # Output dir for built executable (git ignore this)
+│   └── parser.h  # AST structs, parse function
+└── tests/  # Test files
 ```
 
 
