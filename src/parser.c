@@ -306,7 +306,7 @@ static decl_t* parse_va_ds(void) {
     decl_t* tail = head;
     while (current->type == TOKEN_SEMI) {
         advance();
-        if (!is_type_start(current->type)) {
+        if (current->type != TOKEN_INT && current->type != TOKEN_BOOL && current->type != TOKEN_CHAR_KW && current->type != TOKEN_UINT) {
             break;
         }
         decl_t* next = parse_va_d_as_decl();
@@ -318,13 +318,13 @@ static decl_t* parse_va_ds(void) {
 
 
 static stmt_t* parse_locals(void) {
-    if (current->type == TOKEN_INT || current->type == TOKEN_BOOL || current->type == TOKEN_CHAR_KW || current->type == TOKEN_UINT || current->type == TOKEN_IDENTIFIER) {
+    if (current->type == TOKEN_INT || current->type == TOKEN_BOOL || current->type == TOKEN_CHAR_KW || current->type == TOKEN_UINT) {
         decl_t* vars = parse_va_ds();
         stmt_t* head = NULL;
         stmt_t* tail = NULL;
         for (decl_t* v = vars; v != NULL; ) {
             decl_t* next_v = v->next;
-            v->next = NULL;  // Detach
+            v->next = NULL;
             stmt_t* s = stmt_create(STMT_DECL, v, NULL, NULL, NULL, NULL, NULL, NULL);
             if (tail) {
                 tail->next_stmt = s;
