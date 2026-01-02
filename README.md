@@ -64,11 +64,11 @@ Tokenize input files using the `--scan` flag to print token details (type, lexem
 
 ### 3. Parser Tests
 
-Run without the `--scan` flag to parse the input and print the **Abstract Syntax Tree (AST)** or syntax errors.
+Run with the `--parse` flag to parse the input and print the **Abstract Syntax Tree (AST)** or syntax errors.
 
-* **Simple Return:** `./bin/test_parser tests/main_42.c0`
-* **Complex Expression:** `./bin/test_parser tests/parser_expr.c0`
-* **Syntax Error:** `./bin/test_parser tests/parser_error.c0`
+* **Simple Return:** `./bin/test_parser --parse tests/main_42.c0`
+* **Complex Expression:** `./bin/test_parser --parse tests/parser_expr.c0`
+* **Syntax Error:** `./bin/test_parser --parse tests/parser_error.c0`
 
 
 

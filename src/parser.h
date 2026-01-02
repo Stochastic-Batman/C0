@@ -1,127 +1,148 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "scanner.h"
+#include "scanner.h"  // token_t
 
 
-// AST node kinds (match grammar non-terminals loosely)
-typedef enum {
-    // Types
-    AST_BASIC_TYPE,  // <Ty>: int/bool/char/uint/ID
-    AST_TYPE_EXPR,  // <TE>: array/pointer/struct
-    AST_STRUCT_DECL,
-    AST_TYPE_DECL,
-
-    // Declarations
-    AST_VAR_DECL,  // <VaD>: type ID
-    AST_VAR_DECL_SEQ,
-    AST_TYPE_DECL_SEQ,
-    AST_PARAM_DECL_SEQ,
-    AST_LOCAL_DECLS,  // <locals>: local <VaDS> or empty
-
-    // L-values and postfix
-    AST_LVALUE,  // Base ID with postfix chain
-    AST_ID,  // Simple identifier
-    AST_FIELD_ACCESS,  // expr . ID
-    AST_ARRAY_INDEX,  // expr [ expr ]
-    AST_DEREF,
-    AST_ADDR_OF,
-
-    // Expressions
-    AST_PRIMARY,  // ID (with tail), unary, (expr)
-    AST_BIN_EXPR,  // left op right (arith/logic/rel)
-    AST_UNARY_EXPR,  // op child (- or !)
-    AST_CALL,  // ID ( params )
-    AST_ALLOC,  // new ID @
-
-    // Statements
-    AST_ASSIGN,  // lvalue = rhs
-    AST_IF,  // if expr { stmts } [else { stmts }]
-    AST_WHILE,
-    AST_RETURN,
-    AST_STMT_SEQ,  // list of stmts
-
-    // Functions
-    AST_FUNC_DECL,  // type ID (params) { locals body }
-
-    // Program
-    AST_GLOBAL_VAR,  // Global var: type ID ;
-    AST_PROGRAM  // <prog>: typedefs + globals (vars/funcs)
-} ast_kind_t;
+typedef struct decl decl_t;
+typedef struct stmt stmt_t;
+typedef struct expr expr_t;
+typedef struct type type_t;
+typedef struct param param_t;
 
 
 typedef enum {
-    OP_ADD, OP_SUB, OP_MUL, OP_DIV,
-    OP_AND, OP_OR,
-    OP_EQ, OP_NEQ, OP_LT, OP_GT, OP_LEQ, OP_GEQ
-} binop_t;
+    DECL_VAR,  // int x = ...
+    DECL_FUNC,  // function definition
+    DECL_TYPE,  // typedef
+    DECL_STRUCT
+} decl_kind_t;
 
 
+// Decl struct (name, type, value expr/init, code stmt/body, next)
+struct decl {
+    decl_kind_t kind;
+    char* name;
+    type_t* type;
+    expr_t* value;  // Init for variables, NULL for functions
+    stmt_t* code;  // Body for functions
+    decl_t* next;
+};
+
+
+// Statement kinds
 typedef enum {
-    OP_NEG, OP_NOT, OP_DEREF, OP_ADDR
-} unop_t;
+    STMT_ASSIGN,
+    STMT_IF,
+    STMT_WHILE,
+    STMT_RETURN,
+    STMT_BLOCK,  // { stmts }
+    STMT_DECL  // local decl (var/type)
+} stmt_kind_t;
 
 
-// AST node (recursive, with union for variants)
-typedef struct ast_node {
-    ast_kind_t kind;
-    token_t* token;  // Source token for loc/lexeme (copy lexeme if needed)
-    struct ast_node** children;  // For sequences/lists/postfix chains
-    int child_count;
-    union {
-    	char* type_name;  // Basic type: "int" etc. or ID name
-    	int array_size;  // For [NUM], -1 if none
-	
-    	// Struct: children = fields (VAR_DECLs)
-    	// Type decl: type_expr, name
-    	struct { struct ast_node* type_expr; char* decl_name; };
-    	// Var decl: type_name, var_name
-    	struct { char* var_type; char* var_name; struct ast_node* init; };
-    	// Lvalue/postfix: base + tail (chained as children[0] = base, children[1] = next postfix if chain)
-    	struct ast_node* base;
-    	// Field: field_name
-    	char* field_name;
-    	// Index: index_expr
-    	struct ast_node* index_expr;
-        // For Unary/Deref
-        struct ast_node* child;
-    	// Primary lit: value from token
-    	int num_val;
-    	char char_val;
-    	bool bool_val;
-    	// Bin expr: left, op, right
-    	struct { struct ast_node* left; binop_t bin_op; struct ast_node* right; };
-    	// Unary (uses ast_node* child above)
-    	struct { unop_t un_op; };
-    	// Call: func_name, params (children)
-    	char* call_name;
-    	// Alloc: alloc_type (ID)
-    	char* alloc_type;
-    	// Assign: lhs (lvalue), rhs (expr/alloc)
-    	struct { struct ast_node* lhs; struct ast_node* rhs; };
-    	// If: cond, then_stmt (stmt_seq), else_stmt (or NULL)
-    	struct { struct ast_node* if_cond; struct ast_node* then_stmt; struct ast_node* else_stmt; };
-    	// While: cond, body (stmt_seq)
-    	struct { struct ast_node* while_cond; struct ast_node* body; };
-    	// Return: expr
-    	struct ast_node* ret_expr;
-    	// Func decl: ret_type, name, params (children[0...param_count - 1]), locals (children[param_count...]), body (children[last])
-    	struct { char* ret_type; char* func_name; int param_count; int local_count; };
-    	// Program: type_decls (children[0...type_count-1]), globals (children[type_count...]) - vars and funcs mixed
-    	int type_count;
-    };
-} ast_t;
+// Stmt struct (kind, decl for local, expr/cond/init/next, body/else, next)
+struct stmt {
+    stmt_kind_t kind;
+    decl_t* decl;  // For local decl
+    expr_t* init;  // Unused in C0 (we don't have a for loop)
+    expr_t* cond;
+    expr_t* next;  // Unused in C0 (we don't have a for loop)
+    stmt_t* body;
+    stmt_t* else_body;
+    stmt_t* next_stmt;
+};
 
 
-// Parse the entire program from input file
-ast_t *parse_program(FILE* fp);
+// Expr kinds (C0: binary/unary/literal/id/call/alloc/postfix like field/index/deref/addr)
+typedef enum {
+    EXPR_ADD, EXPR_SUB, EXPR_MUL, EXPR_DIV,
+    EXPR_AND, EXPR_OR,
+    EXPR_EQ, EXPR_NEQ, EXPR_LT, EXPR_GT, EXPR_LEQ, EXPR_GEQ,
+    EXPR_NEG, EXPR_NOT,
+    EXPR_ID,
+    EXPR_NUM, EXPR_CHAR, EXPR_BOOL, EXPR_NULL,
+    EXPR_CALL,
+    EXPR_ALLOC,  // new ID@
+    EXPR_FIELD,  // . ID
+    EXPR_INDEX,  // [ expr ]
+    EXPR_DEREF,  // @
+    EXPR_ADDR  // &
+} expr_kind_t;
 
 
-// Should be recursive
-void free_ast(ast_t* node);
+// Expr struct (kind, left/right for bin/postfix, name/value for leaf)
+struct expr {
+    expr_kind_t kind;
+    expr_t* left;
+    expr_t* right;
+    char* name;  // ID/field
+    int num_val;
+    char char_val;
+    bool bool_val;
+    expr_t* next;
+};
 
 
-// For Debuggin
-void print_ast(ast_t* node, int indent);
+// Type kinds (C0: primitive/array/pointer/struct/function)
+typedef enum {
+    TYPE_INT, TYPE_BOOL, TYPE_CHAR, TYPE_UINT,
+    TYPE_STRUCT,
+    TYPE_ARRAY,
+    TYPE_POINTER,
+    TYPE_FUNC,
+    TYPE_NAMED
+} type_kind_t;
+
+
+// Type struct (kind, subtype for compound, params for function)
+struct type {
+    type_kind_t kind;
+    type_t* subtype;  // Array element/pointer to/function return
+    param_t* params;  // Function params
+    char* name;
+    int size;
+};
+
+
+// Param (name, type, next for list)
+struct param {
+    char* name;
+    type_t* type;
+    param_t* next;
+};
+
+
+// Factories (malloc/init)
+decl_t* decl_create(decl_kind_t kind, char* name, type_t* type, expr_t* value, stmt_t* code, decl_t* next);
+stmt_t* stmt_create(stmt_kind_t kind, decl_t* decl, expr_t* init, expr_t* cond, expr_t* next, stmt_t* body, stmt_t* else_body, stmt_t* next_stmt);
+expr_t* expr_create(expr_kind_t kind, expr_t* left, expr_t* right);
+expr_t* expr_create_id(char* name);
+expr_t* expr_create_num(int val);
+expr_t* expr_create_char(char val);
+expr_t* expr_create_bool(bool val);
+expr_t* expr_create_null(void);
+type_t* type_create(type_kind_t kind, type_t* subtype, param_t* params);
+param_t* param_create(char* name, type_t* type, param_t* next);
+
+
+// Parse program (returns decl head)
+decl_t* parse_program(FILE* fp);
+
+
+// Free
+void free_decl(decl_t* d);
+void free_stmt(stmt_t* s);
+void free_expr(expr_t* e);
+void free_type(type_t* t);
+void free_param(param_t* p);
+
+
+// For debugging
+void print_decl(decl_t* d, int indent);
+void print_stmt(stmt_t* s, int indent);
+void print_expr(expr_t* e, int indent);
+void print_type(type_t* t, int indent);
+void print_param(param_t* p, int indent);
 
 #endif
