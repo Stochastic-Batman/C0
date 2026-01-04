@@ -10,6 +10,7 @@ static token_t* current = NULL;
 static expr_t* parse_expr(void);
 static expr_t* parse_pso(void);
 static stmt_t* parse_st_s(void);
+static expr_t* parse_postfix(void);
 
 
 static void advance(void) {
@@ -17,7 +18,7 @@ static void advance(void) {
         free(current->lexeme);
         free(current);
     }
-    current = next_token();
+    next_token();
 }
 
 
@@ -386,7 +387,8 @@ static expr_t* parse_primary(void) {
                 advance();
                 if (current->type == TOKEN_LPAREN) {
                     advance();
-                    node = expr_create(EXPR_CALL, parse_pso(), NULL);
+                    expr_t* args = parse_pso();
+                    node = expr_create(EXPR_CALL, args, NULL);
                     node->name = name;
                     eat(TOKEN_RPAREN);
                 } else {
@@ -447,8 +449,14 @@ static expr_t* parse_mul_expr_tail(expr_t* left) {
 }
 
 
+static expr_t* parse_postfix(void) {
+    expr_t* base = parse_primary();
+    return parse_lvalue_tail(base);
+}
+
+
 static expr_t* parse_mul_expr(void) {
-    expr_t* left = parse_primary();
+    expr_t* left = parse_postfix();
     return parse_mul_expr_tail(left);
 }
 
@@ -663,6 +671,11 @@ static decl_t* parse_gd(void) {
     if (current->type == TOKEN_SEMI) {
         advance();
         return decl_create(DECL_VAR, name, ty, NULL, NULL, NULL);
+    } else if (current->type == TOKEN_ASSIGN) {
+        advance();
+        expr_t* init_expr = parse_rhs();
+        eat(TOKEN_SEMI);
+        return decl_create(DECL_VAR, name, ty, init_expr, NULL, NULL);
     } else {
         eat(TOKEN_LPAREN);
         param_t* params = parse_pdso();
