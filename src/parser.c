@@ -265,7 +265,7 @@ static decl_t* parse_tdso(void) {
 
 
 static param_t* parse_va_d_as_param(void) {
-    type_t* ty = parse_ty();
+    type_t* ty = parse_te();
     char* name = strdup(current->lexeme);
     eat(TOKEN_IDENTIFIER);
     return param_create(name, ty, NULL);
@@ -294,7 +294,7 @@ static param_t* parse_pdso(void) {
 
 
 static decl_t* parse_va_d_as_decl(void) {
-    type_t* ty = parse_ty();
+    type_t* ty = parse_te();
     char* name = strdup(current->lexeme);
     eat(TOKEN_IDENTIFIER);
     return decl_create(DECL_VAR, name, ty, NULL, NULL, NULL);
@@ -657,7 +657,7 @@ static stmt_t* parse_body(void) {
 
 
 static decl_t* parse_gd(void) {
-    type_t* ty = parse_ty();
+    type_t* ty = parse_te();
     char* name = strdup(current->lexeme);
     eat(TOKEN_IDENTIFIER);
     if (current->type == TOKEN_SEMI) {

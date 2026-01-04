@@ -9,6 +9,6 @@ int get_value(Box@ ptr) {
 int main() {
     Box b;
     b.value = 42;
-    Box@ p = &b;
+    Box@ p = b&;
     return get_value(p);
 }
