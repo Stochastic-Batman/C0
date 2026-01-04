@@ -1,5 +1,5 @@
 # **C0**
-Compiler for **C0** written in C
+A compiler for an imperative programming language, resembling Pascal but using C syntax
 
 **C0** is a safe subset of C introduced in the textbook:
 
