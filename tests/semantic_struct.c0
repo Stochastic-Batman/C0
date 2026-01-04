@@ -1,0 +1,12 @@
+typedef struct {
+    int x;
+    int y;
+} Point;
+
+Point origin;
+
+int main() {
+    origin.x = 0;
+    origin.y = 0;
+    return 0;
+}

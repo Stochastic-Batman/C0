@@ -1,0 +1,14 @@
+typedef struct {
+    int value;
+} Box;
+
+int get_value(Box@ ptr) {
+    return ptr@.value;
+}
+
+int main() {
+    Box b;
+    b.value = 42;
+    Box@ p = &b;
+    return get_value(p);
+}

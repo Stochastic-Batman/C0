@@ -34,7 +34,11 @@ C0/
 │   ├── scanner.c  # Scanner implementation
 │   ├── scanner.h  # Scanner Header: token types enum, tokenize function prototype
 │   ├── parser.c  # Parser implementation
-│   └── parser.h  # AST structs, parse function
+│   ├── parser.h  # AST structs, parse function
+│   ├── scope.c  # Variable/function scope
+│   ├── scope.h  # Some definitions from Thain's book
+│   ├── semantic.c  # Semantic Analysis
+│   └── semantic.h  # The smallest file in the project with only a single definition
 └── tests/  # Test files
 ```
 
@@ -43,16 +47,16 @@ C0/
 
 Test files are located in the `tests/` directory. Use the following commands to build and run the test suites.
 
-### 1. Build the Test Executables
+### 0. Build the Test Executables
 
 ```bash
 make test_scanner
 make test_parser
-
+make test_semantic
 ```
 
 
-### 2. Scanner Tests
+### 1. Scanner Tests
 
 Tokenize input files using the `--scan` flag to print token details (type, lexeme, line, column, and value).
 
@@ -62,7 +66,7 @@ Tokenize input files using the `--scan` flag to print token details (type, lexem
 * **Error Handling:** `./bin/test_scanner --scan tests/scanner_error.c0`
 
 
-### 3. Parser Tests
+### 2. Parser Tests
 
 Run with the `--parse` flag to parse the input and print the **Abstract Syntax Tree (AST)** or syntax errors.
 
@@ -70,6 +74,12 @@ Run with the `--parse` flag to parse the input and print the **Abstract Syntax T
 * **Complex Expression:** `./bin/test_parser --parse tests/parser_expr.c0`
 * **Syntax Error:** `./bin/test_parser --parse tests/parser_error.c0`
 
+
+### 3. Semantic Analysis Tests
+
+Run with the `--semantic` flag:
+* **Pointer Example**: `./bin/test_semantic --semantic tests/semantic_pointer.c0`
+* **Struct Example**: `./bin/test_semantic --semantic tests/semantic_struct.c0`
 
 
 ## **Context-Free Grammar of C0**
