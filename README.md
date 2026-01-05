@@ -38,7 +38,9 @@ C0/
 │   ├── scope.c  # Variable/function scope
 │   ├── scope.h  # Some definitions from Thain's book
 │   ├── semantic.c  # Semantic Analysis
-│   └── semantic.h  # The smallest file in the project with only a single definition
+│   ├── semantic.h  # The smallest file in the project with only a single definition
+│   ├── IR.c  # Linear intermediate representation
+│   └── IR.h  # Types and enums compatible with MIPS from System Architecture book
 └── tests/  # Test files
 ```
 
@@ -53,7 +55,7 @@ The command below produces a single executable `C0_compiler` at the top level an
 make
 ```
 
-### 1. Scanner Tests
+### 1. Scanner
 
 Tokenize input files using the `--scan` flag to print token details (type, lexeme, line, column, and value).
 
@@ -63,7 +65,7 @@ Tokenize input files using the `--scan` flag to print token details (type, lexem
 * **Error Handling:** `./C0_compiler --scan tests/scanner_error.c0`
 
 
-### 2. Parser Tests
+### 2. Parser
 
 Run with the `--parse` flag to parse the input and print the **Abstract Syntax Tree (AST)** or syntax errors.
 
@@ -72,11 +74,18 @@ Run with the `--parse` flag to parse the input and print the **Abstract Syntax T
 * **Syntax Error:** `./C0_compiler --parse tests/parser_error.c0`
 
 
-### 3. Semantic Analysis Tests
+### 3. Semantic Analysis
 
 Run with the `--semantic` flag:
 * **Pointer Example**: `./C0_compiler --semantic tests/semantic_pointer.c0`
 * **Struct Example**: `./C0_compiler --semantic tests/semantic_struct.c0`
+
+
+### 4. Intermediate Representation
+
+Linear intermediate representation via `--IR`:
+* **Simple Main**: `./C0_compiler --IR tests/main_42.c0`
+* **Another Simple Example**: `./C0_compiler --IR tests/ir.c0`
 
 
 ## **Context-Free Grammar of C0**
