@@ -2,31 +2,22 @@ CC = gcc
 CFLAGS = -Wall -Wextra -g  # Warnings and debug info
 
 SRC_DIR = src
-BIN_DIR = bin
-TARGET = $(BIN_DIR)/compiler
+TARGET = C0_compiler
+OBJ_DIR = .obj
 
 SOURCES = $(wildcard $(SRC_DIR)/*.c)  # All .c files in src/
-OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(BIN_DIR)/%.o)
+OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 all: $(TARGET)
 
-$(TARGET): $(OBJECTS) | $(BIN_DIR)
+$(TARGET): $(OBJECTS)
 	$(CC) $(OBJECTS) -o $@
+	rm -rf $(OBJ_DIR)
 
-$(BIN_DIR)/%.o: $(SRC_DIR)/%.c | $(BIN_DIR)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BIN_DIR):
-	mkdir -p $(BIN_DIR)
+$(OBJ_DIR):
+	mkdir -p $(OBJ_DIR)
 
-test_scanner: $(BIN_DIR)/main.o $(BIN_DIR)/scanner.o $(BIN_DIR)/parser.o $(BIN_DIR)/semantic.o $(BIN_DIR)/scope.o | $(BIN_DIR)
-	$(CC) $^ -o $(BIN_DIR)/test_scanner
-
-test_parser: $(BIN_DIR)/main.o $(BIN_DIR)/scanner.o $(BIN_DIR)/parser.o $(BIN_DIR)/semantic.o $(BIN_DIR)/scope.o | $(BIN_DIR)
-	$(CC) $^ -o $(BIN_DIR)/test_parser
-
-test_semantic: $(BIN_DIR)/main.o $(BIN_DIR)/scanner.o $(BIN_DIR)/parser.o $(BIN_DIR)/semantic.o $(BIN_DIR)/scope.o | $(BIN_DIR)
-	$(CC) $^ -o $(BIN_DIR)/test_semantic
-
-clean:
-	rm -rf $(BIN_DIR)
+.PHONY: all

@@ -23,12 +23,12 @@ This project applies the techniques from Thain's book to implement a full compil
 
 ```text
 C0/
+├── C0_compiler  # The executable created after running `make` (git ignored)
 ├── LL1_check.py  # Check if the transformed C0 CFG is LL1 via First and Follow sets
 ├── LL1_derivation.pdf  # Derivation of LL(1) C0
 ├── LL1_derivation.tex  # Source code for the derivation of LL(1) C0
 ├── README.md
 ├── Makefile  # Build rules
-├── bin/  # Output dir for built executable (git ignored)
 ├── src/
 │   ├── main.c  # Entry point: reads input file, calls scanner/parser/etc.
 │   ├── scanner.c  # Scanner implementation
@@ -45,41 +45,38 @@ C0/
 
 ## **Running the Tests**
 
-Test files are located in the `tests/` directory. Use the following commands to build and run the test suites.
+### 0. Build the Executable
 
-### 0. Build the Test Executables
+The command below produces a single executable `C0_compiler` at the top level and deletes all the intermediate (`*.o`) files used to create it. 
 
 ```bash
-make test_scanner
-make test_parser
-make test_semantic
+make
 ```
-
 
 ### 1. Scanner Tests
 
 Tokenize input files using the `--scan` flag to print token details (type, lexeme, line, column, and value).
 
-* **Simple Function:** `./bin/test_scanner --scan tests/main_42.c0`
-* **Booleans & Numbers:** `./bin/test_scanner --scan tests/scanner_bool_num.c0`
-* **Expressions:** `./bin/test_scanner --scan tests/scanner_expr.c0`
-* **Error Handling:** `./bin/test_scanner --scan tests/scanner_error.c0`
+* **Simple Function:** `./C0_compiler --scan tests/main_42.c0`
+* **Booleans & Numbers:** `./C0_compiler --scan tests/scanner_bool_num.c0`
+* **Expressions:** `./C0_compiler --scan tests/scanner_expr.c0`
+* **Error Handling:** `./C0_compiler --scan tests/scanner_error.c0`
 
 
 ### 2. Parser Tests
 
 Run with the `--parse` flag to parse the input and print the **Abstract Syntax Tree (AST)** or syntax errors.
 
-* **Simple Return:** `./bin/test_parser --parse tests/main_42.c0`
-* **Complex Expression:** `./bin/test_parser --parse tests/parser_expr.c0`
-* **Syntax Error:** `./bin/test_parser --parse tests/parser_error.c0`
+* **Simple Return:** `./C0_compiler --parse tests/main_42.c0`
+* **Complex Expression:** `./C0_compiler --parse tests/parser_expr.c0`
+* **Syntax Error:** `./C0_compiler --parse tests/parser_error.c0`
 
 
 ### 3. Semantic Analysis Tests
 
 Run with the `--semantic` flag:
-* **Pointer Example**: `./bin/test_semantic --semantic tests/semantic_pointer.c0`
-* **Struct Example**: `./bin/test_semantic --semantic tests/semantic_struct.c0`
+* **Pointer Example**: `./C0_compiler --semantic tests/semantic_pointer.c0`
+* **Struct Example**: `./C0_compiler --semantic tests/semantic_struct.c0`
 
 
 ## **Context-Free Grammar of C0**
