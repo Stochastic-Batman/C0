@@ -5,10 +5,10 @@
 
 
 static token_t* current = NULL;
+static token_t* ahead = NULL;
 
 
 static expr_t* parse_expr(void);
-static expr_t* parse_pso(void);
 static stmt_t* parse_st_s(void);
 static expr_t* parse_postfix(void);
 
@@ -18,7 +18,8 @@ static void advance(void) {
         free(current->lexeme);
         free(current);
     }
-    next_token();
+    current = ahead;
+    ahead = next_token();
 }
 
 
@@ -34,6 +35,21 @@ static void eat(token_type expected) {
 
 static bool is_type_start(token_type tt) {
     return tt == TOKEN_INT || tt == TOKEN_BOOL || tt == TOKEN_CHAR_KW || tt == TOKEN_UINT || tt == TOKEN_IDENTIFIER;
+}
+
+
+// Used to disambiguate "Box b;" (Decl) from "b = 5;" (Stmt)
+static bool is_decl_start_lookahead(void) {
+    if (current->type == TOKEN_INT || current->type == TOKEN_BOOL ||  current->type == TOKEN_CHAR_KW || current->type == TOKEN_UINT || current->type == TOKEN_STRUCT) {
+        return true;
+    }
+
+    if (current->type == TOKEN_IDENTIFIER) {
+        if (ahead->type == TOKEN_IDENTIFIER || ahead->type == TOKEN_AT || ahead->type == TOKEN_LBRACKET) {
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -307,7 +323,7 @@ static decl_t* parse_va_ds(void) {
     decl_t* tail = head;
     while (current->type == TOKEN_SEMI) {
         advance();
-        if (current->type != TOKEN_INT && current->type != TOKEN_BOOL && current->type != TOKEN_CHAR_KW && current->type != TOKEN_UINT) {
+        if (!is_decl_start_lookahead()) {
             break;
         }
         decl_t* next = parse_va_d_as_decl();
@@ -319,7 +335,7 @@ static decl_t* parse_va_ds(void) {
 
 
 static stmt_t* parse_locals(void) {
-    if (current->type == TOKEN_INT || current->type == TOKEN_BOOL || current->type == TOKEN_CHAR_KW || current->type == TOKEN_UINT) {
+    if (is_decl_start_lookahead()) {
         decl_t* vars = parse_va_ds();
         stmt_t* head = NULL;
         stmt_t* tail = NULL;
@@ -387,7 +403,19 @@ static expr_t* parse_primary(void) {
                 advance();
                 if (current->type == TOKEN_LPAREN) {
                     advance();
-                    expr_t* args = parse_pso();
+                    expr_t* args = NULL;
+                    if (current->type != TOKEN_RPAREN) {
+                        expr_t* head = parse_expr();
+                        expr_t* tail = head;
+                        while (current->type == TOKEN_COMMA) {
+                            advance();
+                            expr_t* next = parse_expr();
+                            tail->next = next;
+                            tail = next;
+                        }
+                        args = head;
+                    }
+
                     node = expr_create(EXPR_CALL, args, NULL);
                     node->name = name;
                     eat(TOKEN_RPAREN);
@@ -543,25 +571,6 @@ static expr_t* parse_expr(void) {
 }
 
 
-static expr_t* parse_pa_s(void) {
-    expr_t* head = parse_expr();
-    expr_t* tail = head;
-    while (current->type == TOKEN_COMMA) {
-        advance();
-        expr_t* next = parse_expr();
-        tail->next = next;
-        tail = next;
-    }
-    return head;
-}
-
-
-static expr_t* parse_pso(void) {
-    if (current->type == TOKEN_RPAREN) return NULL;
-    return parse_pa_s();
-}
-
-
 static expr_t* parse_rhs(void) {
     if (current->type == TOKEN_NEW) {
         advance();
@@ -590,7 +599,23 @@ static stmt_t* parse_ep(void) {
 
 static stmt_t* parse_st(void) {
     stmt_t* node;
-    if (current->type == TOKEN_IF) {
+
+    if (is_decl_start_lookahead()) {
+        type_t* ty = parse_te();
+        char* name = strdup(current->lexeme);
+        eat(TOKEN_IDENTIFIER);
+
+        expr_t* init = NULL;
+        if (current->type == TOKEN_ASSIGN) {
+            advance();
+            init = parse_rhs();
+        }
+        eat(TOKEN_SEMI);
+
+        decl_t* d = decl_create(DECL_VAR, name, ty, init, NULL, NULL);
+        node = stmt_create(STMT_DECL, d, NULL, NULL, NULL, NULL, NULL, NULL);
+    }
+    else if (current->type == TOKEN_IF) {
         advance();
         expr_t* cond = parse_expr();
         eat(TOKEN_LBRACE);
@@ -610,6 +635,7 @@ static stmt_t* parse_st(void) {
         eat(TOKEN_ASSIGN);
         expr_t* rhs = parse_rhs();
         node = stmt_create(STMT_ASSIGN, NULL, lhs, rhs, NULL, NULL, NULL, NULL);
+        eat(TOKEN_SEMI);
     }
     return node;
 }
@@ -618,18 +644,20 @@ static stmt_t* parse_st(void) {
 static stmt_t* parse_st_s(void) {
     stmt_t* head = NULL;
     stmt_t* tail = NULL;
-    if (current->type != TOKEN_RBRACE && current->type != TOKEN_RETURN) {
-        head = parse_st();
-        tail = head;
-        while (current->type == TOKEN_SEMI) {
-            advance();
-            if (current->type == TOKEN_RBRACE || current->type == TOKEN_RETURN) {
-                break;
-            }
-            stmt_t* next = parse_st();
-            tail->next_stmt = next;
-            tail = next;
+
+    while (current->type != TOKEN_RBRACE && current->type != TOKEN_ELSE &&
+           current->type != TOKEN_RETURN && current->type != TOKEN_EOF) {
+        stmt_t* st = parse_st();
+        if (st == NULL) break;
+
+        if (head == NULL) {
+            head = tail = st;
+        } else {
+            tail->next_stmt = st;
+            tail = st;
         }
+
+        while (tail->next_stmt != NULL) tail = tail->next_stmt;
     }
     return head;
 }
@@ -716,7 +744,9 @@ static decl_t* parse_g_ds(void) {
 
 decl_t* parse_program(FILE* fp) {
     scanner_init(fp);
+    ahead = next_token();
     advance();
+
     decl_t* types = parse_tdso();
     decl_t* globals = parse_g_ds();
     if (types == NULL) return globals;

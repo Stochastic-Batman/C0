@@ -1,7 +1,7 @@
 # **C0**
 A compiler for an imperative programming language, resembling Pascal but using C syntax
 
-**C0** is a safe subset of C introduced in the textbook:
+**C0** is a static, explicitly typed, safe subset of C introduced in the textbook:
 
 Wolfgang J. Paul, Christoph Baumann, Petro Lutsyk, and Sabine Schmaltz.  
 *System Architecture: An Ordinary Engineering Discipline*.  

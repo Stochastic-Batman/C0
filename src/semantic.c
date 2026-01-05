@@ -112,18 +112,13 @@ static type_t* resolve_expr(env_t* env, expr_t* e) {
             return type_create(TYPE_POINTER, NULL, NULL);  // Void pointer-like
         case EXPR_CALL:
             {
-                // Assume left is ID (no function pointers in C0)
-                if (e->left->kind != EXPR_ID) {
-                    fprintf(stderr, "semantic error: function call on non-identifier\n");
-                    exit(1);
-                }
-                symbol_t* sym = lookup_value(env, e->left->name);
+                symbol_t* sym = lookup_value(env, e->name);
                 if (!sym || sym->kind != SYMBOL_FUNC) {
-                    fprintf(stderr, "semantic error: '%s' is not a function\n", e->left->name);
+                    fprintf(stderr, "semantic error: '%s' is not a function\n", e->name);
                     exit(1);
                 }
                 // Check argument types match parameters
-                expr_t* arg = e->right;
+                expr_t* arg = e->left;
                 param_t* par = sym->params;
                 while (arg && par) {
                     type_t* at = resolve_expr(env, arg);
@@ -138,7 +133,7 @@ static type_t* resolve_expr(env_t* env, expr_t* e) {
                     fprintf(stderr, "semantic error: incorrect number of arguments\n");
                     exit(1);
                 }
-                return sym->type;  // Return type
+                return sym->type->subtype;  // Return type
             }
         case EXPR_ADD:
         case EXPR_SUB:
@@ -182,12 +177,12 @@ static type_t* resolve_expr(env_t* env, expr_t* e) {
         case EXPR_NEG:
         case EXPR_NOT:
             {
-                type_t* rt = resolve_expr(env, e->right);
-                if ((e->kind == EXPR_NEG && (rt->kind != TYPE_INT && rt->kind != TYPE_UINT)) || (e->kind == EXPR_NOT && rt->kind != TYPE_BOOL)) {
+                type_t* lt = resolve_expr(env, e->left);
+                if ((e->kind == EXPR_NEG && (lt->kind != TYPE_INT && lt->kind != TYPE_UINT)) || (e->kind == EXPR_NOT && lt->kind != TYPE_BOOL)) {
                     fprintf(stderr, "semantic error: invalid type for unary operator\n");
                     exit(1);
                 }
-                return rt;
+                return lt;
             }
         case EXPR_ALLOC:
             {
