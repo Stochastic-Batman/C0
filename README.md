@@ -38,9 +38,11 @@ C0/
 │   ├── scope.c  # Variable/function scope
 │   ├── scope.h  # Some definitions from Thain's book
 │   ├── semantic.c  # Semantic Analysis
-│   ├── semantic.h  # The smallest file in the project with only a single definition
+│   ├── semantic.h  # A single definition
 │   ├── IR.c  # Linear intermediate representation
-│   └── IR.h  # Types and enums compatible with MIPS from System Architecture book
+│   ├── IR.h  # Types and enums compatible with MIPS from System Architecture book
+│   ├── codegen.c  # Linear IR -> MIPS
+│   └── codegen.h  # A single definition
 └── tests/  # Test files
 ```
 
@@ -86,6 +88,12 @@ Run with the `--semantic` flag:
 Linear intermediate representation via `--IR`:
 * **Simple Main**: `./C0_compiler --IR tests/main_42.c0`
 * **Another Simple Example**: `./C0_compiler --IR tests/ir.c0`
+
+### 5. MIPS Code Generation
+
+Use `-o <output>` to generate MIPS (*System Architecture*'s variant) code:
+* **Simple Main**: `./C0_compilerx tests/main_42.c0 -o main_42.s`
+* **Complex Expression:** `./C0_compiler tests/parser_expr.c0 -o complex_expr.s`
 
 
 ## **Context-Free Grammar of C0**

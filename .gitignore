@@ -56,3 +56,4 @@ dkms.conf
 
 # Stochastic-Batman's additions
 C0_compiler
+*.s

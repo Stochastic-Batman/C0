@@ -50,7 +50,7 @@ static char* new_label(void) {
 // Main lowering entry point
 ir_program_t* lower_to_ir(decl_t* program_ast) {
     ir_program_t* ir = calloc(1, sizeof(ir_program_t));
-    ir->globals = program_ast;  // keep globals/types as-is for now
+    ir->globals = program_ast;
 
     ir_func_t** func_tail = &ir->functions;
 
@@ -61,6 +61,7 @@ ir_program_t* lower_to_ir(decl_t* program_ast) {
         f->name = strdup(d->name);
         f->ret_type = d->type->subtype;
         f->params = d->type->params;
+        f->ast = d;
 
         ir_instr_t* body_head = NULL;
         ir_instr_t* body_tail = NULL;

@@ -52,14 +52,14 @@ typedef enum {
     // System / Coprocessor
     IR_SYSC,  // sysc
     IR_ERET,  // eret
-    IR_MOVG2S,  // movg2s rd, rt   (coprocessor move)
+    IR_MOVG2S,  // movg2s rd, rt
     IR_MOVS2G,  // movs2g rd, rt
 
     // Pseudo / Helper (not real MIPS, but useful for lowering)
     IR_LABEL,  // label:
-    IR_LI,  // li rt, imm      (pseudo: load immediate)
-    IR_LA,  // la rt, label    (pseudo: load address)
-    IR_MOVE,  // move rd, rs     (pseudo)
+    IR_LI,  // li rt, imm  (pseudo: load immediate)
+    IR_LA,  // la rt, label  (pseudo: load address)
+    IR_MOVE,  // move rd, rs  (pseudo)
     IR_NOP  // nop
 } ir_op_t;
 
@@ -79,6 +79,7 @@ typedef struct ir_func {
     char* name;
     type_t* ret_type;
     param_t* params;
+    decl_t* ast;
     ir_instr_t* body;
     struct ir_func* next;
 } ir_func_t;
@@ -86,7 +87,7 @@ typedef struct ir_func {
 
 // Whole program IR
 typedef struct {
-    decl_t* globals;     // Global variables / types (kept from AST)
+    decl_t* globals;  // Global variables / types (kept from AST)
     ir_func_t* functions;
 } ir_program_t;
 
