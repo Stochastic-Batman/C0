@@ -227,17 +227,16 @@ static void gen_instr(ir_instr_t* i, FILE* out) {
         }
         case IR_LI: {
             if (i->imm >= -32768 && i->imm <= 32767) fprintf(out, "addi %s, $zero, %d\n", i->dest, i->imm);
-            else {
+            else {  // For large immediates, use lui + ori
                 int hi = (i->imm >> 16) & 0xFFFF;  // 0xFFFF = 65535 = 2^16 - 1
                 int lo = i->imm & 0xFFFF;
                 fprintf(out, "lui %s, %d\n", i->dest, hi);
-                fprintf(out, "ori %s, %s, %d\n", i->dest, i->dest, lo);
+                if (lo != 0) fprintf(out, "ori %s, %s, %d\n", i->dest, i->dest, lo);
             }
             break;
         }
-        case IR_LA: {
-            fprintf(out, "lui %s, %%hi(%s)\n", i->dest, i->src1);
-            fprintf(out, "addi %s, %s, %%lo(%s)\n", i->dest, i->dest, i->src1);
+        case IR_LA: {  // Globals are in lower 64KB (addresses < 65536)
+            fprintf(out, "addi %s, $zero, %s\n", i->dest, i->src1);
             break;
         }
         case IR_MOVE: {
