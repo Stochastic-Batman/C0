@@ -235,3 +235,58 @@ It is possible to transform the **C0** CFG into an ***LL(1)*** grammar by elimin
 | `;` | Statement/declaration separator |
 | `,` | Parameter separator |
 | `=` | Assignment |
+
+
+## **C0**'s Subset of **MIPS**
+
+The *System Architecture* book (chapter 8) describes the subset of MIPS instructions used in the C0 compiler. Here's a simplified table:
+
+### I-Type Instructions
+
+| Mnemonic | Syntax | Effect |
+|----------|--------|--------|
+| lw | `lw rt rs imm` | Load word: rt = memory[rs + sign_extend(imm)] |
+| sw | `sw rt rs imm` | Store word: memory[rs + sign_extend(imm)] = rt |
+| addi | `addi rt rs imm` | Add immediate: rt = rs + sign_extend(imm) |
+| addiu | `addiu rt rs imm` | Add unsigned immediate: rt = rs + sign_extend(imm) |
+| slti | `slti rt rs imm` | Set less than immediate: rt = (rs < sign_extend(imm) ? 1 : 0) |
+| sltiu | `sltiu rt rs imm` | Set less than unsigned immediate: rt = (rs < sign_extend(imm) ? 1 : 0) |
+| andi | `andi rt rs imm` | AND immediate: rt = rs AND zero_extend(imm) |
+| ori | `ori rt rs imm` | OR immediate: rt = rs OR zero_extend(imm) |
+| xori | `xori rt rs imm` | XOR immediate: rt = rs XOR zero_extend(imm) |
+| lui | `lui rt imm` | Load upper immediate: rt = imm << 16 |
+| bltz | `bltz rs imm` | Branch on less than zero: pc = pc + (rs < 0 ? imm << 2 : 4) |
+| bgez | `bgez rs imm` | Branch on greater than or equal zero: pc = pc + (rs >= 0 ? imm << 2 : 4) |
+| beq | `beq rs rt imm` | Branch on equal: pc = pc + (rs == rt ? imm << 2 : 4) |
+| bne | `bne rs rt imm` | Branch on not equal: pc = pc + (rs != rt ? imm << 2 : 4) |
+| blez | `blez rs imm` | Branch on less than or equal zero: pc = pc + (rs <= 0 ? imm << 2 : 4) |
+| bgtz | `bgtz rs imm` | Branch on greater than zero: pc = pc + (rs > 0 ? imm << 2 : 4) |
+
+### R-Type Instructions
+
+| Mnemonic | Syntax | Effect |
+|----------|--------|--------|
+| srl | `srl rd rt sa` | Shift right logical: rd = shift_right_logical(rt, sa) |
+| add | `add rd rs rt` | Add: rd = rs + rt |
+| addu | `addu rd rs rt` | Add unsigned: rd = rs + rt |
+| sub | `sub rd rs rt` | Subtract: rd = rs - rt |
+| subu | `subu rd rs rt` | Subtract unsigned: rd = rs - rt |
+| and | `and rd rs rt` | AND: rd = rs AND rt |
+| or | `or rd rs rt` | OR: rd = rs OR rt |
+| xor | `xor rd rs rt` | XOR: rd = rs XOR rt |
+| nor | `nor rd rs rt` | NOR: rd = NOT(rs OR rt) |
+| slt | `slt rd rs rt` | Set less than: rd = (rs < rt ? 1 : 0) |
+| sltu | `sltu rd rs rt` | Set less than unsigned: rd = (rs < rt ? 1 : 0) |
+| jr | `jr rs` | Jump register: pc = rs |
+| jalr | `jalr rd rs` | Jump and link register: rd = pc + 4, pc = rs |
+| sysc | `sysc` | System call |
+| eret | `eret` | Exception return |
+| movg2s | `movg2s rd rt` | Move general to special: special_register[rd] = general_register[rt] |
+| movs2g | `movs2g rd rt` | Move special to general: general_register[rt] = special_register[rd] |
+
+### J-Type Instructions
+
+| Mnemonic | Syntax | Effect |
+|----------|--------|--------|
+| j | `j iindex` | Jump: pc = pc[31:28] concatenated with (iindex << 2) |
+| jal | `jal iindex` | Jump and link: R31 = pc + 4, pc = pc[31:28] concatenated with (iindex << 2) |
